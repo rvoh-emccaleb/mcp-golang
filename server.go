@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
-	"github.com/metoro-io/mcp-golang/internal/datastructures"
-	"github.com/metoro-io/mcp-golang/internal/protocol"
-	"github.com/metoro-io/mcp-golang/transport"
 	"github.com/pkg/errors"
+	"github.com/rvoh-emccaleb/mcp-golang/internal/datastructures"
+	"github.com/rvoh-emccaleb/mcp-golang/internal/protocol"
+	"github.com/rvoh-emccaleb/mcp-golang/transport"
 )
 
 // Here we define the actual MCP server that users will create and run
