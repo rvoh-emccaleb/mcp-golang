@@ -1,4 +1,4 @@
-module github.com/metoro-io/mcp-golang
+module github.com/rvoh-emccaleb/mcp-golang
 
 go 1.21
 
