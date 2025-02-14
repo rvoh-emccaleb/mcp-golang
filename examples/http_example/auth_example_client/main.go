@@ -9,6 +9,10 @@ import (
 	"github.com/rvoh-emccaleb/mcp-golang/transport/http"
 )
 
+const (
+	ProtocolVersion = "2024-11-05"
+)
+
 func main() {
 	// Create an HTTP transport that connects to the server
 	transport := http.NewHTTPClientTransport("/mcp")
@@ -20,7 +24,17 @@ func main() {
 	client := mcp_golang.NewClient(transport)
 
 	// Initialize the client
-	if resp, err := client.Initialize(context.Background()); err != nil {
+	if resp, err := client.Initialize(
+		context.Background(),
+		&mcp_golang.InitializeRequestParams{
+			ClientInfo: mcp_golang.InitializeRequestClientInfo{
+				Name:    "example-client",
+				Version: "0.1.0",
+			},
+			ProtocolVersion: ProtocolVersion,
+			Capabilities:    nil,
+		},
+	); err != nil {
 		log.Fatalf("Failed to initialize client: %v", err)
 	} else {
 		log.Printf("Initialized client: %v", spew.Sdump(resp))
