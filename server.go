@@ -200,6 +200,24 @@ func (s *Server) sendToolListChangedNotification() error {
 	return s.protocol.Notification("notifications/tools/list_changed", nil)
 }
 
+// RegisterToolWithSchema registers a tool with a predefined JSON schema.
+// This is an alternative to RegisterTool, which uses reflection on the handler to create the schema.
+func (s *Server) RegisterToolWithSchema(name string, description string, handler any, schema *jsonschema.Schema) error {
+	err := validateToolHandler(handler)
+	if err != nil {
+		return err
+	}
+
+	s.tools.Store(name, &tool{
+		Name:            name,
+		Description:     description,
+		Handler:         createWrappedToolHandler(handler),
+		ToolInputSchema: schema, // Use the provided schema directly
+	})
+
+	return s.sendToolListChangedNotification()
+}
+
 func (s *Server) CheckToolRegistered(name string) bool {
 	_, ok := s.tools.Load(name)
 	return ok
