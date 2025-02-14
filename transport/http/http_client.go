@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/rvoh-emccaleb/mcp-golang/transport"
 )
@@ -67,6 +69,30 @@ func (t *HTTPClientTransport) Send(ctx context.Context, message *transport.BaseJ
 	for key, value := range t.headers {
 		req.Header.Set(key, value)
 	}
+
+	if message.Type == transport.BaseMessageTypeJSONRPCNotificationType {
+		// For notifications, use an arbitrary short timeout
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
+		defer cancel()
+		req = req.WithContext(ctx)
+
+		// Fire and forget for notifications
+		go func() {
+			resp, err := t.client.Do(req)
+			if err != nil && !errors.Is(err, context.DeadlineExceeded) {
+				if t.errorHandler != nil {
+					t.errorHandler(fmt.Errorf("async notification error: %w", err))
+				}
+			}
+			if resp != nil {
+				resp.Body.Close()
+			}
+		}()
+
+		return nil
+	}
+
+	// For non-notifications, continue with normal synchronous request
 
 	resp, err := t.client.Do(req)
 	if err != nil {
