@@ -72,7 +72,7 @@ func (t *HTTPClientTransport) Send(ctx context.Context, message *transport.BaseJ
 
 	if message.Type == transport.BaseMessageTypeJSONRPCNotificationType {
 		// For notifications, use an arbitrary short timeout
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Millisecond)
 		defer cancel()
 		req = req.WithContext(ctx)
 
