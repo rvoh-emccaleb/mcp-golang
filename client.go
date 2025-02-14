@@ -25,8 +25,21 @@ func NewClient(transport transport.Transport) *Client {
 	}
 }
 
+// A bit loosey goosey, but it works for now.
+// See: https://spec.modelcontextprotocol.io/specification/2024-11-05/basic/lifecycle/
+type InitializeRequestParams struct {
+	ProtocolVersion string                      `json:"protocolVersion"`
+	ClientInfo      InitializeRequestClientInfo `json:"clientInfo"`
+	Capabilities    map[string]interface{}      `json:"capabilities"`
+}
+
+type InitializeRequestClientInfo struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
 // Initialize connects to the server and retrieves its capabilities
-func (c *Client) Initialize(ctx context.Context) (*InitializeResponse, error) {
+func (c *Client) Initialize(ctx context.Context, params *InitializeRequestParams) (*InitializeResponse, error) {
 	if c.initialized {
 		return nil, errors.New("client already initialized")
 	}
@@ -37,7 +50,7 @@ func (c *Client) Initialize(ctx context.Context) (*InitializeResponse, error) {
 	}
 
 	// Make initialize request to server
-	response, err := c.protocol.Request(ctx, "initialize", map[string]interface{}{}, nil)
+	response, err := c.protocol.Request(ctx, "initialize", params, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize")
 	}
@@ -53,8 +66,14 @@ func (c *Client) Initialize(ctx context.Context) (*InitializeResponse, error) {
 		return nil, errors.Wrap(err, "failed to unmarshal initialize response")
 	}
 
+	err = c.protocol.Notification("notifications/initialized", nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to send initialized notification")
+	}
+
 	c.capabilities = &initResult.Capabilities
 	c.initialized = true
+
 	return &initResult, nil
 }
 
