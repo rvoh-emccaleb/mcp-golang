@@ -157,7 +157,6 @@ func NewProtocol(options *ProtocolOptions) *Protocol {
 	}
 
 	// Set up default handlers
-	p.SetNotificationHandler("notifications/initialized", p.handleInitializedNotification)
 	p.SetNotificationHandler("notifications/cancelled", p.handleCancelledNotification)
 	p.SetNotificationHandler("$/progress", p.handleProgressNotification)
 
@@ -296,12 +295,6 @@ func (p *Protocol) handleRequest(ctx context.Context, request *transport.BaseJSO
 			p.handleError(fmt.Errorf("failed to send response: %w", err))
 		}
 	}()
-}
-
-// Note: Not sure what this is for, yet, after perusing the MCP spec, lightly.
-// Just have a placeholder here, for now, so that our server can at least receive it.
-func (p *Protocol) handleInitializedNotification(notification *transport.BaseJSONRPCNotification) error {
-	return nil
 }
 
 func (p *Protocol) handleProgressNotification(notification *transport.BaseJSONRPCNotification) error {
