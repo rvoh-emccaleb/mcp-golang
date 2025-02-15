@@ -49,7 +49,7 @@ func (c *Client) Initialize(ctx context.Context, params *InitializeRequestParams
 		return nil, errors.Wrap(err, "failed to connect transport")
 	}
 
-	// Make initialize request to server
+	// Begin initialization handshake with server
 	response, err := c.protocol.Request(ctx, "initialize", params, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize")
@@ -66,7 +66,8 @@ func (c *Client) Initialize(ctx context.Context, params *InitializeRequestParams
 		return nil, errors.Wrap(err, "failed to unmarshal initialize response")
 	}
 
-	err = c.protocol.Notification("notifications/initialized", nil)
+	// Finish initialization handshake with server
+	err = c.protocol.Notification("notifications/initialized", map[string]interface{}{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send initialized notification")
 	}

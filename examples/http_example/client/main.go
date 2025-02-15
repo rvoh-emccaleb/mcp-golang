@@ -16,7 +16,7 @@ const (
 
 func main() {
 	// Create an HTTP transport that connects to the server
-	transport := http.NewHTTPClientTransport("/mcp")
+	transport := http.NewHTTPClientTransport("/mcp", 1*time.Millisecond)
 	transport.WithBaseURL("http://localhost:8081")
 
 	// Create a new client with the transport

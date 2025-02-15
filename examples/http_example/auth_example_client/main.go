@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	mcp_golang "github.com/rvoh-emccaleb/mcp-golang"
@@ -15,7 +16,7 @@ const (
 
 func main() {
 	// Create an HTTP transport that connects to the server
-	transport := http.NewHTTPClientTransport("/mcp")
+	transport := http.NewHTTPClientTransport("/mcp", 1*time.Millisecond)
 	transport.WithBaseURL("http://localhost:8080/api/v1")
 	// Public metoro token - not a leak
 	transport.WithHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21lcklkIjoiOThlZDU1M2QtYzY4ZC00MDRhLWFhZjItNDM2ODllNWJiMGUzIiwiZW1haWwiOiJ0ZXN0QGNocmlzYmF0dGFyYmVlLmNvbSIsImV4cCI6MTgyMTI0NzIzN30.QeFzKsP1yO16pVol0mkAdt7qhJf6nTqBoqXqdWawBdE")

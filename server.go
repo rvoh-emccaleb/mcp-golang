@@ -572,6 +572,14 @@ func (s *Server) Serve() error {
 	pr.SetRequestHandler("prompts/get", s.handlePromptCalls)
 	pr.SetRequestHandler("resources/list", s.handleListResources)
 	pr.SetRequestHandler("resources/read", s.handleResourceCalls)
+
+	// Note: All notifications in MCP, other than this one, are sent from the server to the client, and can use SSE.
+	// This is the only notification that is sent from the client to the server. In order to make things work
+	// smoothly from the client's perspective, we choose to handle this notification as a request instead of
+	// as a notification, because working with the HTTP protocol is inherently request/response oriented, and the client
+	// would otherwise have to guess as to how long to wait before assuming the server is initialized.
+	pr.SetRequestHandler("notifications/initialized", s.handleInitializedNotification)
+
 	err := pr.Connect(s.transport)
 	if err != nil {
 		return err
@@ -592,6 +600,16 @@ func (s *Server) handleInitialize(ctx context.Context, request *transport.BaseJS
 			Version: s.serverVersion,
 		},
 	}, nil
+}
+
+// handleInitializedNotification is a request handler for the "notifications/initialized" notification.
+// This is the only notification in MCP that is sent from the client to the server. In order to make things work
+// smoothly from the client's perspective, we choose to handle this notification as a request instead of
+// as a notification, because working with the HTTP protocol is inherently request/response oriented, and the client
+// would otherwise have to guess as to how long to wait before assuming the server is initialized. We just return
+// an empty response body to the client to indicate that the notification has been received.
+func (s *Server) handleInitializedNotification(ctx context.Context, request *transport.BaseJSONRPCRequest, _ protocol.RequestHandlerExtra) (transport.JsonRpcBody, error) {
+	return map[string]interface{}{}, nil
 }
 
 func (s *Server) handleListTools(ctx context.Context, request *transport.BaseJSONRPCRequest, _ protocol.RequestHandlerExtra) (transport.JsonRpcBody, error) {
