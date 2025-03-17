@@ -282,3 +282,13 @@ func (c *Client) Ping(ctx context.Context) error {
 func (c *Client) GetCapabilities() *ServerCapabilities {
 	return c.capabilities
 }
+
+// Close cleans up resources used by the client, including the protocol and transport layers.
+// It should be called when the client is no longer needed.
+func (c *Client) Close() error {
+	if err := c.protocol.Close(); err != nil {
+		return errors.Wrap(err, "failed to close protocol")
+	}
+
+	return nil
+}
