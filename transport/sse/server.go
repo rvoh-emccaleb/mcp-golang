@@ -32,14 +32,31 @@ type ServerTransport struct {
 	mu              sync.RWMutex
 	sseConns        map[int64]*sseConnection // map of connection IDs to connections
 	nextConnID      int64                    // atomic counter for generating connection IDs
+	chunkSize       int                      // size of chunks for writing SSE messages
+}
+
+// Option is a function that configures a ServerTransport
+type Option func(*ServerTransport)
+
+// WithChunkSize sets the chunk size for writing SSE messages
+func WithChunkSize(size int) Option {
+	return func(t *ServerTransport) {
+		if size > 0 {
+			t.chunkSize = size
+		}
+	}
 }
 
 // NewServerTransport creates a new SSE server transport
-func NewServerTransport(endpoint string) *ServerTransport {
+func NewServerTransport(endpoint string, options ...Option) *ServerTransport {
 	t := &ServerTransport{
 		Transport:    base.NewTransport(),
 		baseEndpoint: endpoint,
 		sseConns:     make(map[int64]*sseConnection),
+		chunkSize:    1024, // default to 1KB chunks
+	}
+	for _, opt := range options {
+		opt(t)
 	}
 	return t
 }
@@ -205,11 +222,41 @@ func (t *ServerTransport) writeMessageEvent(sseConn *sseConnection, message *tra
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	_, err = sseConn.writer.Write(fmt.Appendf(nil, "event: message\ndata: %s\n\n", data))
-	if err != nil {
+	// Write the event header
+	if _, err := io.WriteString(sseConn.writer, "event: message\ndata: "); err != nil {
 		t.RemoveSSEConnection(sseConn.id)
 		return fmt.Errorf(
-			"failed to write message data for connection with id %d: %w. %w",
+			"failed to write message event for connection with id %d: %w. %w",
+			sseConn.id,
+			err,
+			ErrConnectionRemoved,
+		)
+	}
+
+	// Use the configured chunk size
+	for i := 0; i < len(data); i += t.chunkSize {
+		end := i + t.chunkSize
+		if end > len(data) {
+			end = len(data)
+		}
+
+		if _, err := sseConn.writer.Write(data[i:end]); err != nil {
+			t.RemoveSSEConnection(sseConn.id)
+			return fmt.Errorf(
+				"failed to write message chunk for connection with id %d: %w. %w",
+				sseConn.id,
+				err,
+				ErrConnectionRemoved,
+			)
+		}
+		sseConn.flusher.Flush()
+	}
+
+	// Write the final newlines
+	if _, err := io.WriteString(sseConn.writer, "\n\n"); err != nil {
+		t.RemoveSSEConnection(sseConn.id)
+		return fmt.Errorf(
+			"failed to write message termination for connection with id %d: %w. %w",
 			sseConn.id,
 			err,
 			ErrConnectionRemoved,
@@ -217,7 +264,6 @@ func (t *ServerTransport) writeMessageEvent(sseConn *sseConnection, message *tra
 	}
 
 	sseConn.flusher.Flush()
-
 	return nil
 }
 

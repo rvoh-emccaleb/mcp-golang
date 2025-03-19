@@ -24,6 +24,7 @@ type TimeArgs struct {
 const (
 	baseEndpoint    = "/mcp/sse"
 	protocolVersion = "2024-11-05"
+	serverPort      = 8083
 )
 
 func main() {
@@ -134,9 +135,9 @@ func main() {
 	}
 
 	// Start the HTTP server
-	log.Println("Starting HTTP server with SSE on :8081...")
+	log.Printf("Starting HTTP server with SSE on :%d...", serverPort)
 	httpServer := &http.Server{
-		Addr:    ":8081",
+		Addr:    fmt.Sprintf(":%d", serverPort),
 		Handler: nil,
 
 		// Timeouts
@@ -162,7 +163,7 @@ func main() {
 
 	// Create an HTTP transport that connects to the server
 	transport := sse.NewSSEClientTransport(baseEndpoint, 1*time.Millisecond)
-	transport.WithBaseURL("http://localhost:8081")
+	transport.WithBaseURL(fmt.Sprintf("http://localhost:%d", serverPort))
 
 	// Create a new client with the transport
 	client := mcp_golang.NewClient(transport)
